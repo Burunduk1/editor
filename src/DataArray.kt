@@ -1,3 +1,5 @@
+package ds
+
 class DataArray<T> {
     private val data = ArrayList<T>()
     fun get(i: Int) = data[i]
@@ -15,4 +17,7 @@ class DataArray<T> {
     fun toList(): List<T> = data.toList()
     val size: Int
         get() = data.size
+    fun clear() {
+        data.clear()
+    }
 }

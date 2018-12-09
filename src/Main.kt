@@ -1,3 +1,4 @@
+import java.awt.EventQueue
 import java.awt.event.*
 import java.io.File
 import javax.swing.*
@@ -14,7 +15,15 @@ class EditorWindow : JFrame() {
         this.setSize(600, 400)
         this.setLocationRelativeTo(null)
         this.add(tabbedPane)
+        tabbedPane.addChangeListener {
+            println("tabbed paned: ${tabbedPane.tabCount} tabs")
+            if (tabbedPane.tabCount > 0) {
+                print("selected tab: ")
+                (tabbedPane.selectedComponent as EditorTab).canvas.log()
+            }
+        }
         newTab(File(testFileName))
+        newTab(File("a"))
     }
 
     private fun createMenubar() {
@@ -29,8 +38,8 @@ class EditorWindow : JFrame() {
             file.add(item)
         }
 
-        addItem("New", KeyEvent.VK_N, { newTab() })
-        addItem("Open", KeyEvent.VK_O, { openTab() })
+        addItem("New", KeyEvent.VK_N, { EventQueue.invokeLater { newTab() }})
+        addItem("Open", KeyEvent.VK_O, { EventQueue.invokeLater { openTab() }})
         addItem("Exit", KeyEvent.VK_E, { System.exit(0) }, images.loadIcon("exit.png"))
 
         menubar.add(file)
@@ -38,8 +47,10 @@ class EditorWindow : JFrame() {
     }
 
     private fun newTab(f: File? = null) {
+        @Suppress("NAME_SHADOWING") val f = files.checkFile(f)
         println("newTab: ${f?.name}")
-        tabbedPane.addTab("Canvas", EditorTab(f?.canonicalPath))
+        val tab = EditorTab(f)
+        tabbedPane.addTab(tab.title, tab)
         tabbedPane.selectedIndex = tabbedPane.tabCount - 1
     }
 
@@ -55,8 +66,9 @@ class EditorWindow : JFrame() {
 }
 
 fun main(args: Array<String>) {
-//    EventQueue.invokeLater
-    val frame = EditorWindow()
-    frame.revalidate()
-    frame.isVisible = true
+    EventQueue.invokeLater {
+        val frame = EditorWindow()
+        frame.revalidate()
+        frame.isVisible = true
+    }
 }

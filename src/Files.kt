@@ -2,10 +2,21 @@ package files
 
 import java.io.File
 
-fun openOrCreate(f: File?) = when {
-    f == null -> null
-    f.exists() -> f.bufferedReader()
-    else -> f.bufferedReader()
-}.also { println("openOrCreate: filename = ${f?.name}")}
+fun checkFile(f: File?): File? {
+    if (f?.exists() == null)
+        return null
+    try {
+        f.bufferedReader().close()
+    } catch (_: Exception) {
+        println("Exception!")
+        return null
+    }
+    return f
+}
+fun getFile(s: String?) = s?.let {checkFile(File(s))}
 
-fun openOrCreate(s: String?) = s?.let {openOrCreate(File(s))}
+fun openFile(f: File) =
+    f.bufferedReader().also {
+        println("openFile: filename = ${f.name}")
+    }
+
