@@ -5,7 +5,7 @@ import javax.swing.*
 
 class EditorWindow : JFrame() {
     private val tabbedPane = JTabbedPane()
-    private val testFileName = "C:\\Users\\SK\\IdeaProjects\\editor\\src\\Main.kt"
+    private val sourceDir = "C:\\Users\\SK\\IdeaProjects\\editor\\src\\"
 
     init {
         createMenubar()
@@ -22,8 +22,9 @@ class EditorWindow : JFrame() {
                 (tabbedPane.selectedComponent as EditorTab).canvas.log()
             }
         }
-        newTab(File(testFileName))
-        newTab(File("a"))
+        newTab(File("${sourceDir}Main.kt"))
+        newTab(File("${sourceDir}WrongName"))
+        newTab(File("${sourceDir}DataArray.kt"))
     }
 
     private fun createMenubar() {
