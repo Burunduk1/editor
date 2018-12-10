@@ -9,7 +9,7 @@ val scrollBar = Color(200, 200, 200)
 
 fun color(c: CodeType) = when (c) {
     CodeType.BASE -> Color(0, 0, 0)
-    CodeType.KEYWORD -> Color(0, 30, 80)
+    CodeType.KEYWORD -> Color(0, 40, 150)
     CodeType.OPERATOR -> Color(100, 100, 100)
     else -> Color(0, 0, 0)
 }

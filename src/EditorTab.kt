@@ -27,7 +27,6 @@ data class EditorCanvas(val editor: Editor) : JComponent() {
 //        log()
         if (g is Graphics2D) {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            g.setFont(baseFont)
             val metrics = g.getFontMetrics(baseFont)
             val w = metrics.widths[0]
             val h = metrics.height
@@ -39,6 +38,7 @@ data class EditorCanvas(val editor: Editor) : JComponent() {
             for (i in 0 until editor.rowCount) {
                 for (j in 0 until 80) {
                     val c = editor.get(i, j)
+                    g.setFont(if (colors.isBold(c.type)) boldFont else baseFont)
                     g.color = colors.color(c.type)
                     g.drawString("%c".format(c.char), indexSpace + j * w + wPadding, i * h + metrics.ascent + hPadding)
                 }
