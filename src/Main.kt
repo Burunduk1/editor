@@ -32,6 +32,7 @@ class EditorWindow : JFrame() {
         isFocusable = true
         focusTraversalKeysEnabled = false
         addKeyListener(object : KeyAdapter() {
+            // TODO: if menu is opened do not forward keys
             override fun keyTyped(e: KeyEvent) {
                 if (tabbedPane.tabCount > 0)
                     for (listener in currentTab.keyListeners)
@@ -47,9 +48,9 @@ class EditorWindow : JFrame() {
                         KeyEvent.VK_F4 -> closeTab()
                     }
                 } else {
-                    when (e.keyCode) {
-                        KeyEvent.VK_ESCAPE -> closeApp()
-                    }
+//                    when (e.keyCode) {
+//                        KeyEvent.VK_ESCAPE -> closeApp()
+//                    }
                 }
                 with (tabbedPane) {
                     if (e.isAltDown && tabCount != 0) {
@@ -79,14 +80,14 @@ class EditorWindow : JFrame() {
 
     private fun createMenubar() {
         val menubar = JMenuBar()
-        val file = JMenu("File")
-        file.mnemonic = KeyEvent.VK_F
+        var subMenu = JMenu("File")
+        subMenu.mnemonic = KeyEvent.VK_F
 
         fun addItem(name: String, key: Int, action: (ActionEvent) -> Unit, icon: ImageIcon? = null) {
             val item = JMenuItem(name, icon)
             item.mnemonic = key
             item.addActionListener(action)
-            file.add(item)
+            subMenu.add(item)
         }
 
         addItem("New", KeyEvent.VK_N, { EventQueue.invokeLater { newTab() }})
@@ -94,8 +95,15 @@ class EditorWindow : JFrame() {
         addItem("Save", KeyEvent.VK_S, { EventQueue.invokeLater { saveTab() }})
         addItem("Close file", KeyEvent.VK_C, { EventQueue.invokeLater { closeTab() }})
         addItem("Exit", KeyEvent.VK_X, { closeApp() }, images.loadIcon("exit.png"))
+        menubar.add(subMenu)
 
-        menubar.add(file)
+        subMenu = JMenu("Edit")
+        subMenu.mnemonic = KeyEvent.VK_E
+        addItem("Cut", KeyEvent.VK_T, { EventQueue.invokeLater { currentTab.cutEvent() }})
+        addItem("Copy", KeyEvent.VK_C, { EventQueue.invokeLater { currentTab.copyEvent() }})
+        addItem("Paste", KeyEvent.VK_P, { EventQueue.invokeLater { currentTab.pasteEvent() }})
+        menubar.add(subMenu)
+
         this.jMenuBar = menubar
     }
 

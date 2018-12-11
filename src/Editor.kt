@@ -231,8 +231,9 @@ class Editor {
     }
 
     fun copyToClipboard(start: CmpPair<Int, Int>, end: CmpPair<Int, Int>) {
-        val l = minOf(start, end)
-        val r = maxOf(start, end)
+        val l = minOf(start, end).copy()
+        val r = maxOf(start, end).copy()
+        println("copy range: $l $r")
         val buffer = Data()
         if (l.y < r.y) {
             buffer.push(DataArray(subArray(l.y, l.x, data.get(l.y).size)))
@@ -248,14 +249,19 @@ class Editor {
     fun pasteFromClipboard() {
         clipboard?.let {
             if (it.size >= 1) {
-                cursor.x += 0
+                cursor.correctX()
                 if (it.size == 1) {
                     data.get(cursor.y).insertAfter(cursor.x, copyOfRow(0, it))
                 } else {
                     editNewline()
+//                    for (row in it)
+//                        println(row.toList().map { x -> x.char }.joinToString(","))
                     data.get(cursor.y - 1).insertAfter(data.get(cursor.y - 1).size, copyOfRow(0, it))
-                    for (i in 1 until it.size - 1)
-                        data.insertAfter(cursor.y++, DataArray(copyOfRow(i, it)))
+                    println("${cursor.y} < ${data.size}$")
+                    for (i in 1 until it.size - 1) {
+                        data.insertAfter(cursor.y, DataArray(copyOfRow(i, it)))
+                        cursor.y++
+                    }
                     data.get(cursor.y).insertAfter(cursor.x, copyOfRow(it.size - 1, it))
                 }
                 cursor.x += it.get(it.size - 1).size
@@ -265,9 +271,9 @@ class Editor {
     }
 
     fun editDeleteBlock(start: CmpPair<Int, Int>, end: CmpPair<Int, Int>) {
-        val l = minOf(start, end)
-        val r = maxOf(start, end)
-        println("copy: $l $r")
+        val l = minOf(start, end).copy()
+        val r = maxOf(start, end).copy()
+        println("delete range: $l $r")
         val multiRow = l.y < r.y
         var aliveFirstRow = false
         if (l.x > 0 && l.y < r.y) {

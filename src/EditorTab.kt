@@ -43,6 +43,7 @@ class EditorCanvas(val editor: Editor) : JComponent() {
         get() = height / h
 
     init {
+        // TODO: select text via mouseDrag & mouseClick
         addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
                 if (indexSpace <= e.x && e.x <= width - scrollBar.barWidth) {
@@ -243,6 +244,8 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                         }
                     }
                 }
+                if (savedSelectMode != canvas.selectMode)
+                    repaint()
             }
         })
         canvas.editor.registerNavigateListener { handleCursorAction() }
