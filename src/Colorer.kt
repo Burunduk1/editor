@@ -6,9 +6,9 @@ enum class CodeType {
     BASE, WHITESPACE, EMPTY, KEYWORD, OPERATOR
 }
 
-data class CodeChar(var char: Char, var type: CodeType)
+class CodeChar(var char: Char, var type: CodeType = CodeType.BASE)
 
-data class Parser(val data: DataArray<DataArray<CodeChar>>) {
+class Parser(val data: DataArray<DataArray<CodeChar>>) {
     companion object {
         const val whitespaces = "\t\n\r "
         fun isWhitespace(char: Char): Boolean {

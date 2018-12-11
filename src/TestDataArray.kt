@@ -12,5 +12,11 @@ fun testDataArray() {
     array.set(1, 30)
     array.push(5)
     assert(array.toString() == "[1, 30, 100, 5]") {println("array.set/toString fails") }
+    array.removeBefore(-1)
+    array.removeBefore(2)
+    assert(array.toString() == "[1, 100, 5]") {println("array.removeBefore fails") }
+    array.removeAfter(3)
+    array.removeAfter(2)
+    assert(array.toString() == "[1, 100]") {println("array.removeAfter fails") }
     println("OK: " + Arrays.toString(currentStackTrace()))
 }

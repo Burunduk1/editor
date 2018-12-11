@@ -1,5 +1,3 @@
-import files.selectFile
-import java.awt.Component
 import java.awt.EventQueue
 import java.awt.event.*
 import java.io.File
@@ -7,9 +5,7 @@ import javax.swing.*
 
 class EditorWindow : JFrame() {
     private val tabbedPane = JTabbedPane()
-    private val sourceDir = "tests/"
-    private val currentTab: EditorTab
-        get() = tabbedPane.selectedComponent as EditorTab
+    private val sourceDir = "C:\\Users\\SK\\IdeaProjects\\editor\\src\\"
 
     init {
         createMenubar()
@@ -20,27 +16,27 @@ class EditorWindow : JFrame() {
         this.setLocationRelativeTo(null)
         this.add(tabbedPane)
         tabbedPane.addChangeListener {
-            println("tabbed paned change listener: ${tabbedPane.tabCount} tabs")
+            println("tabbed paned: ${tabbedPane.tabCount} tabs")
             if (tabbedPane.tabCount > 0) {
                 print("selected tab: ")
-                currentTab.canvas.log()
+                (tabbedPane.selectedComponent as EditorTab).canvas.log()
             }
         }
-        newTab(File("${sourceDir}Main.test"))
+        newTab(File("${sourceDir}Main.kt"))
         newTab(File("${sourceDir}WrongName"))
-        newTab(File("${sourceDir}DataArray.test"))
+        newTab(File("${sourceDir}DataArray.kt"))
         isFocusable = true
         addKeyListener(object : KeyAdapter() {
             override fun keyTyped(e: KeyEvent) {
-                for (listener in currentTab.keyListeners)
+                for (listener in tabbedPane.selectedComponent.keyListeners)
                     listener.keyTyped(e)
             }
             override fun keyPressed(e: KeyEvent) {
-                for (listener in currentTab.keyListeners)
+                for (listener in tabbedPane.selectedComponent.keyListeners)
                     listener.keyPressed(e)
             }
             override fun keyReleased(e: KeyEvent) {
-                for (listener in currentTab.keyListeners)
+                for (listener in tabbedPane.selectedComponent.keyListeners)
                     listener.keyReleased(e)
             }
         })
@@ -60,42 +56,28 @@ class EditorWindow : JFrame() {
 
         addItem("New", KeyEvent.VK_N, { EventQueue.invokeLater { newTab() }})
         addItem("Open", KeyEvent.VK_O, { EventQueue.invokeLater { openTab() }})
-        addItem("Save", KeyEvent.VK_S, { EventQueue.invokeLater { saveTab() }})
-        addItem("Close file", KeyEvent.VK_C, { EventQueue.invokeLater { closeTab() }})
         addItem("Exit", KeyEvent.VK_E, { System.exit(0) }, images.loadIcon("exit.png"))
 
         menubar.add(file)
         this.jMenuBar = menubar
     }
 
-    private fun saveTab() {
-        currentTab.save()
-        updateTitles()
-    }
-
-    private fun closeTab() {
-        tabbedPane.removeTabAt(tabbedPane.selectedIndex)
-    }
-
     private fun newTab(f: File? = null) {
         @Suppress("NAME_SHADOWING") val f = files.checkFileForReading(f)
         println("newTab: ${f?.name}")
         val tab = EditorTab(f)
-        tab.canvas.editor.registerEditListener { updateTitles() }
         tabbedPane.addTab(tab.title, tab)
         tabbedPane.selectedIndex = tabbedPane.tabCount - 1
     }
 
-    private fun updateTitles() {
-        with (tabbedPane) {
-            for (i in 0 until tabCount)
-                setTitleAt(i, (getComponentAt(i) as EditorTab).title)
-        }
-    }
-
     private fun openTab() {
         println("open new tab...")
-        newTab(selectFile(this as Component, JFileChooser.OPEN_DIALOG))
+        val fc = JFileChooser()
+
+        when (fc.showOpenDialog(this)) {
+            JFileChooser.APPROVE_OPTION -> newTab(fc.selectedFile)
+            else -> println("opening was canceled by user")
+        }
     }
 }
 

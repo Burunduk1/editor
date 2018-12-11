@@ -1,5 +1,5 @@
 package ds
-
+  // Hellofffff
 class DataArray<T> {
     private val data = ArrayList<T>()
     fun get(i: Int) = data[i]
@@ -13,7 +13,6 @@ class DataArray<T> {
     fun push(x: T) {
         insertAfter(data.size, x)
     }
-    fun pop(): T = data.removeAt(data.size - 1)
     fun removeAfter(i: Int) {
         if (0 <= i && i < data.size)
             data.removeAt(i)
