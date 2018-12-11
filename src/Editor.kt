@@ -9,7 +9,7 @@ class Editor {
     private val emptyChar = CodeChar(' ', CodeType.EMPTY)
     var saved = true
 
-    class Cursor(var _x: Int, var _y: Int, private val data: DataArray<DataArray<CodeChar>>) {
+    class Cursor(private var _x: Int, private var _y: Int, private val data: DataArray<DataArray<CodeChar>>) {
         var y: Int
             get() = _y
             set(value) {
@@ -24,7 +24,7 @@ class Editor {
             }
 
         fun correctX() { _x = maxOf(0, minOf(_x, data.get(_y).size)) }
-        fun correctY() { _y = maxOf(0, minOf(_y, data.size - 1)) }
+        private fun correctY() { _y = maxOf(0, minOf(_y, data.size - 1)) }
     }
     val cursor = Cursor(0, 0, data)
 
@@ -138,12 +138,12 @@ class Editor {
         cursor.x = rowLen()
         navigateUpdate()
     }
-    fun navigateDown() {
-        cursor.y++
+    fun navigateDown(dy: Int) {
+        cursor.y += dy
         navigateUpdate()
     }
-    fun navigateUp() {
-        cursor.y--
+    fun navigateUp(dy: Int) {
+        cursor.y -= dy
         navigateUpdate()
     }
     fun navigateRight() {
@@ -152,6 +152,58 @@ class Editor {
     }
     fun navigateLeft() {
         cursor.x--
+        navigateUpdate()
+    }
+    fun navigateTermRight() {
+        val row = data.get(cursor.y)
+        if (cursor.x == row.size)
+            return
+        fun char() = row.get(cursor.x).char
+        when {
+            Parser.isWhitespace(char()) -> {
+                while (cursor.x < row.size && Parser.isWhitespace(char()))
+                    cursor.x++
+            }
+            Parser.canBeInName(char()) -> {
+                while (cursor.x < row.size && Parser.canBeInName(char()))
+                    cursor.x++
+                while (cursor.x < row.size && Parser.isWhitespace(char()))
+                    cursor.x++
+            }
+            else -> cursor.x++
+        }
+        navigateUpdate()
+    }
+    fun navigateTermLeft() {
+        val row = data.get(cursor.y)
+        if (cursor.x == 0)
+            return
+        fun char() = row.get(cursor.x - 1).char
+        when {
+            Parser.isWhitespace(char()) -> {
+                while (cursor.x > 0 && Parser.isWhitespace(char()))
+                    cursor.x--
+                if (cursor.x > 0 && Parser.canBeInName(char()))
+                    while (cursor.x > 0 && Parser.canBeInName(char()))
+                        cursor.x--
+                else
+                    cursor.x--
+            }
+            Parser.canBeInName(char()) -> {
+                while (cursor.x > 0 && Parser.canBeInName(char()))
+                    cursor.x--
+            }
+            else -> cursor.x--
+        }
+        navigateUpdate()
+    }
+
+    fun navigateToBegin() {
+        cursor.y = 0
+        navigateUpdate()
+    }
+    fun navigateToEnd() {
+        cursor.y = data.size - 1
         navigateUpdate()
     }
 }

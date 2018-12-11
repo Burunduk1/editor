@@ -26,6 +26,9 @@ class EditorCanvas(val editor: Editor) : JComponent() {
     private val wPadding: Int by lazy { w / 2 }
     private val hPadding: Int by lazy { 2 }
 
+    val rowsOnScreen: Int
+        get() = height / h
+
     init {
         addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
@@ -33,7 +36,7 @@ class EditorCanvas(val editor: Editor) : JComponent() {
                     println("pressed inside [$w $h] x <- (${e.x} - ${indexSpace} - ${wPadding}) / $w")
                     editor.cursor.y = (e.y + scrollBar.y) / h
                     editor.cursor.x = (e.x - indexSpace - wPadding) / w
-                    needScroll = true
+                    scrollToCursor()
                     repaint()
                 }
             }
@@ -43,23 +46,19 @@ class EditorCanvas(val editor: Editor) : JComponent() {
         println("hi from canvas[$id] size=${this.size}$")
     }
 
-    var needScroll = false
+    fun scrollToCursor() {
+        val y0 = editor.cursor.y * h - scrollBar.y
+        val y1 = y0 + h
+        if (y0 < 0)
+            scrollBar.move(y0.toDouble())
+        else if (y1 > height)
+            scrollBar.move((y1 - height).toDouble())
+    }
 
     override fun paintComponent(g: Graphics) {
         //log()
         if (g is Graphics2D) {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-
-            if (needScroll) {
-                val y0 = editor.cursor.y * h - scrollBar.y
-                val y1 = y0 + h
-                println("scrolling: y0=$y0 y1=$y1 height=$height")
-                if (y0 < 0)
-                    scrollBar.move(y0.toDouble())
-                else if (y1 > height)
-                    scrollBar.move((y1 - height).toDouble())
-                needScroll = false
-            }
 
             // draw text
             val y = scrollBar.y
@@ -107,7 +106,7 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
             editor.load(files.openFileForReading(file!!))
         }
         addKeyListener(object : KeyAdapter() {
-            val skippedKeys = arrayOf(8, 9, 10, 127)
+            val skippedKeys = arrayOf(8, 9, 10, 13, 27, 127)
             override fun keyTyped(e: KeyEvent) {
                 val code = e.keyChar.toInt()
                 if (skippedKeys.indexOf(code) != -1 || e.isAltDown || e.isControlDown || e.isActionKey || e.isMetaDown) {
@@ -121,16 +120,28 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                 with (canvas.editor) {
                     when (e.keyCode) {
                         KeyEvent.VK_UP -> {
-                            navigateUp()
+                            navigateUp(1)
                         }
                         KeyEvent.VK_DOWN -> {
-                            navigateDown()
+                            navigateDown(1)
+                        }
+                        KeyEvent.VK_PAGE_UP -> {
+                            navigateUp(maxOf(1, canvas.rowsOnScreen - 1))
+                        }
+                        KeyEvent.VK_PAGE_DOWN -> {
+                            navigateDown(maxOf(1, canvas.rowsOnScreen - 1))
                         }
                         KeyEvent.VK_LEFT -> {
-                            navigateLeft()
+                            if (e.isControlDown)
+                                navigateTermLeft()
+                            else
+                                navigateLeft()
                         }
                         KeyEvent.VK_RIGHT -> {
-                            navigateRight()
+                            if (e.isControlDown)
+                                navigateTermRight()
+                            else
+                                navigateRight()
                         }
                         KeyEvent.VK_DELETE -> {
                             editDelete()
@@ -142,10 +153,16 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                             editNewline()
                         }
                         KeyEvent.VK_HOME -> {
-                            navigateHome()
+                            if (e.isControlDown)
+                                navigateToBegin()
+                            else
+                                navigateHome()
                         }
                         KeyEvent.VK_END -> {
-                            navigateEnd()
+                            if (e.isControlDown)
+                                navigateToEnd()
+                            else
+                                navigateEnd()
                         }
                         KeyEvent.VK_TAB -> {
                             for (i in 0 until tabSize)
@@ -162,16 +179,29 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
 
     private fun handleCursorAction() {
         println("${canvas.id}: handleCursorAction")
-        canvas.needScroll = true
+        canvas.scrollToCursor()
         canvas.repaint()
     }
 
-    @Synchronized fun save() {
+    fun save(): Boolean {
         if (file == null)
             file = checkFileForWriting(selectFile(this, JFileChooser.SAVE_DIALOG))
-        if (file != null)
-            openFileForWriting(file!!).use { editor.save(it) } // unsafe concurrency
+        if (file != null) {
+            openFileForWriting(file!!).use {
+                editor.save(it)
+                return true
+            } // unsafe concurrency
+        }
+        return false
     }
+
+    fun close(): Boolean {
+        println("try to close ${title} saved=${editor.saved}")
+        return editor.saved || save()
+    }
+
+    val needSave: Boolean
+        get() = !editor.saved
 
     val title: String
         get() {

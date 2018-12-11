@@ -15,7 +15,7 @@ class EditorWindow : JFrame() {
         createMenubar()
         this.iconImage = images.loadImage("icon.png")
         this.title = "Java Editor"
-        this.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+        this.defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
         this.setSize(600, 400)
         this.setLocationRelativeTo(null)
         this.add(tabbedPane)
@@ -33,16 +33,46 @@ class EditorWindow : JFrame() {
         focusTraversalKeysEnabled = false
         addKeyListener(object : KeyAdapter() {
             override fun keyTyped(e: KeyEvent) {
-                for (listener in currentTab.keyListeners)
-                    listener.keyTyped(e)
+                if (tabbedPane.tabCount > 0)
+                    for (listener in currentTab.keyListeners)
+                        listener.keyTyped(e)
             }
             override fun keyPressed(e: KeyEvent) {
-                for (listener in currentTab.keyListeners)
-                    listener.keyPressed(e)
+                if (e.isControlDown) {
+                    when (e.keyCode) {
+                        KeyEvent.VK_N -> newTab()
+                        KeyEvent.VK_O -> openTab()
+                        KeyEvent.VK_S -> saveTab()
+                        KeyEvent.VK_W -> closeTab()
+                        KeyEvent.VK_F4 -> closeTab()
+                    }
+                } else {
+                    when (e.keyCode) {
+                        KeyEvent.VK_ESCAPE -> closeApp()
+                    }
+                }
+                with (tabbedPane) {
+                    if (e.isAltDown && tabCount != 0) {
+                        when (e.keyCode) {
+                            KeyEvent.VK_RIGHT -> selectedIndex = (selectedIndex + 1) % tabCount
+                            KeyEvent.VK_LEFT -> selectedIndex = (selectedIndex + tabCount - 1) % tabCount
+                        }
+                    }
+                }
+                if (tabbedPane.tabCount > 0)
+                    for (listener in currentTab.keyListeners)
+                        listener.keyPressed(e)
             }
             override fun keyReleased(e: KeyEvent) {
-                for (listener in currentTab.keyListeners)
-                    listener.keyReleased(e)
+                if (tabbedPane.tabCount > 0)
+                    for (listener in currentTab.keyListeners)
+                        listener.keyReleased(e)
+            }
+        })
+        addWindowListener(object : WindowAdapter() {
+            override fun windowClosing(e: WindowEvent) {
+                println("event: window closing")
+                closeApp()
             }
         })
     }
@@ -63,7 +93,7 @@ class EditorWindow : JFrame() {
         addItem("Open", KeyEvent.VK_O, { EventQueue.invokeLater { openTab() }})
         addItem("Save", KeyEvent.VK_S, { EventQueue.invokeLater { saveTab() }})
         addItem("Close file", KeyEvent.VK_C, { EventQueue.invokeLater { closeTab() }})
-        addItem("Exit", KeyEvent.VK_E, { System.exit(0) }, images.loadIcon("exit.png"))
+        addItem("Exit", KeyEvent.VK_X, { closeApp() }, images.loadIcon("exit.png"))
 
         menubar.add(file)
         this.jMenuBar = menubar
@@ -74,8 +104,40 @@ class EditorWindow : JFrame() {
         updateTitles()
     }
 
+    private fun closeApp() {
+        println("call closeApp")
+        var needSave = false
+        with (tabbedPane) {
+            for (i in 0 until tabCount)
+                needSave = needSave or (getComponentAt(i) as EditorTab).needSave
+        }
+        if (needSave) {
+            val options = arrayOf<Any>("Save & Exit", "Just exit", "Cancel")
+            val choice = JOptionPane.showOptionDialog(this, "There are unsaved changes. What to do?",
+                "Save changes?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0])
+            when (choice) {
+                0 -> {
+                    with (tabbedPane) {
+                        for (i in 0 until tabCount) {
+                            val tab = getComponentAt(i) as EditorTab
+                            if (tab.needSave)
+                                tab.save()
+                        }
+                    }
+                    System.exit(0)
+                }
+                1 -> {
+                    System.exit(0)
+                }
+            }
+        } else {
+            System.exit(0)
+        }
+    }
+
     private fun closeTab() {
-        tabbedPane.removeTabAt(tabbedPane.selectedIndex)
+        if (tabbedPane.tabCount > 0 && currentTab.close())
+            tabbedPane.removeTabAt(tabbedPane.selectedIndex)
     }
 
     private fun newTab(f: File? = null) {
