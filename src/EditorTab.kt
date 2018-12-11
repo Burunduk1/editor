@@ -146,7 +146,8 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                     VK_HOME,
                     VK_END
                 ).indexOf(e.keyCode) != -1
-                if (!isNavigation || !e.isShiftDown) {
+                val savedSelectMode = canvas.selectMode
+                if (!e.isControlDown && !e.isAltDown && (!isNavigation || !e.isShiftDown)) {
                     canvas.selectMode = false
                 } else {
                     with(canvas) {
@@ -185,7 +186,14 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                                 navigateRight()
                         }
                         VK_DELETE -> {
-                            editDelete()
+                            if (savedSelectMode) {
+                                if (e.isShiftDown)
+                                    cutEvent(true)
+                                else
+                                    deleteEvent(true)
+                            } else {
+                                editDelete()
+                            }
                         }
                         VK_BACK_SPACE -> {
                             editBackspace()
@@ -217,12 +225,48 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                             if (e.isControlDown)
                                 editDuplicateLine()
                         }
+                        VK_C -> {
+                            if (e.isControlDown)
+                                copyEvent()
+                        }
+                        VK_V -> {
+                            if (e.isControlDown) {
+                                canvas.selectMode = false
+                                pasteEvent()
+                            }
+                        }
+                        VK_X -> {
+                            if (e.isControlDown) {
+                                cutEvent()
+                                canvas.selectMode = false
+                            }
+                        }
                     }
                 }
             }
         })
         canvas.editor.registerNavigateListener { handleCursorAction() }
         canvas.editor.registerEditListener { handleCursorAction() }
+    }
+
+    fun copyEvent(mode: Boolean = true) {
+        with(canvas) {
+            if (mode)
+                editor.copyToClipboard(selectStart, editor.cursor.pair)
+        }
+    }
+    fun pasteEvent() {
+        canvas.editor.pasteFromClipboard()
+    }
+    fun deleteEvent(mode: Boolean = true) {
+        with(canvas) {
+            if (mode)
+                editor.editDeleteBlock(selectStart, editor.cursor.pair)
+        }
+    }
+    fun cutEvent(mode: Boolean = true) {
+        copyEvent(mode)
+        deleteEvent(mode)
     }
 
     private fun handleCursorAction() {

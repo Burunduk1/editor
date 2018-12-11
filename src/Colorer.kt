@@ -75,16 +75,13 @@ class Parser(private val data: DataArray<DataArray<CodeChar>>) {
             )
         }
         val keywordsRegex : Regex by lazy {
-            Regex("""(^|[^\w\d_])(""" + keywords.joinToString("|") + """)($|[^\w\d_])""")
+            Regex("""(^|[^\w\d_])(""" + keywords.joinToString("|") + """)(?![\w\d_])""")
         }
         val numbersRegex : Regex by lazy {
             Regex("""(^|[^\w\d_])(\d+)($|[^\w\d_])""")
         }
-        val commentLine : Regex by lazy {
-            Regex("""//.*[\n]""")
-        }
-        val commentBlock : Regex by lazy {
-            Regex("""[/][*](.|\n)*?[*][/]""")
+        val commentRegex : Regex by lazy {
+            Regex("""(//.*[\n])|([/][*](.|\n)*?[*][/])""")
         }
     }
 
@@ -123,24 +120,10 @@ class Parser(private val data: DataArray<DataArray<CodeChar>>) {
 
     private fun markComments() {
         val text = getText()
-        var rightBorder = 0
         val mark = Array(text.length) {false}
-        fun commentRange(range: IntRange) {
-            for (i in range)
+        for (match in Parser.commentRegex.findAll(text))
+            for (i in match.range)
                 mark[i] = true
-            rightBorder = range.last + 1
-        }
-        while (true) {
-            val line = Parser.commentLine.find(text, rightBorder)
-            val block = Parser.commentBlock.find(text, rightBorder)
-            if (line == null && block == null)
-                break
-            if (line != null && (block == null || line.range.first < block.range.first))
-                commentRange(line.range)
-            else
-                commentRange(block!!.range)
-
-        }
         var row = 0
         var column = 0
         for (i in 0 until text.length) {

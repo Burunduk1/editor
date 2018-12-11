@@ -3,14 +3,17 @@ import parser.*
 import ds.DataArray
 import java.io.*
 
+typealias Data = DataArray<DataArray<CodeChar>>
+
 class Editor {
-    private val data = DataArray<DataArray<CodeChar>>()
+    private var clipboard: Data? = null
+    private val data = Data()
     private val colorer = Parser(data)
     private val emptyRow = DataArray<CodeChar>()
     private val emptyChar = CodeChar(' ', CodeType.EMPTY)
     var saved = true
 
-    class Cursor(private var _x: Int, private var _y: Int, private val data: DataArray<DataArray<CodeChar>>) {
+    class Cursor(private var _x: Int, private var _y: Int, private val data: Data) {
         var y: Int
             get() = _y
             set(value) {
@@ -133,11 +136,12 @@ class Editor {
         editUpdate()
     }
 
-    private fun subArray(i: Int, start: Int, end: Int) = data.get(i).subArray(start, end).asSequence().map {it.char}
+    private fun subArray(i: Int, start: Int, end: Int, buffer: Data = data) = buffer.get(i).slice(start, end).asSequence().map {CodeChar(it.char, it.type)}.asIterable()
+    private fun copyOfRow(i: Int, buffer: Data = data) = subArray(i, 0, buffer.get(i).size, buffer)
+
     fun editDuplicateLine() {
-        data.insertAfter(cursor.y, DataArray<CodeChar>())
+        data.insertAfter(cursor.y, DataArray(copyOfRow(cursor.y)))
         cursor.y++
-        data.get(cursor.y - 1).insertAfter(0, subArray(cursor.y, 0, data.get(cursor.y).size).map {CodeChar(it)}.asIterable())
         editUpdate()
     }
 
@@ -224,5 +228,67 @@ class Editor {
     fun navigateToEnd() {
         cursor.y = data.size - 1
         navigateUpdate()
+    }
+
+    fun copyToClipboard(start: CmpPair<Int, Int>, end: CmpPair<Int, Int>) {
+        val l = minOf(start, end)
+        val r = maxOf(start, end)
+        val buffer = Data()
+        if (l.y < r.y) {
+            buffer.push(DataArray(subArray(l.y, l.x, data.get(l.y).size)))
+            l.y++
+            l.x = 0
+        }
+        while (l.y < r.y)
+            buffer.push(DataArray(copyOfRow(l.y++)))
+        buffer.push(DataArray(subArray(l.y, l.x, r.x)))
+        clipboard = buffer
+    }
+
+    fun pasteFromClipboard() {
+        clipboard?.let {
+            if (it.size >= 1) {
+                cursor.x += 0
+                if (it.size == 1) {
+                    data.get(cursor.y).insertAfter(cursor.x, copyOfRow(0, it))
+                } else {
+                    editNewline()
+                    data.get(cursor.y - 1).insertAfter(data.get(cursor.y - 1).size, copyOfRow(0, it))
+                    for (i in 1 until it.size - 1)
+                        data.insertAfter(cursor.y++, DataArray(copyOfRow(i, it)))
+                    data.get(cursor.y).insertAfter(cursor.x, copyOfRow(it.size - 1, it))
+                }
+                cursor.x += it.get(it.size - 1).size
+            }
+        }
+        editUpdate()
+    }
+
+    fun editDeleteBlock(start: CmpPair<Int, Int>, end: CmpPair<Int, Int>) {
+        val l = minOf(start, end)
+        val r = maxOf(start, end)
+        println("copy: $l $r")
+        val multiRow = l.y < r.y
+        var aliveFirstRow = false
+        if (l.x > 0 && l.y < r.y) {
+            data.get(l.y).removeRange(l.x, data.get(l.y).size)
+            l.y++
+            l.x = 0
+            aliveFirstRow = true
+        }
+        while (l.y < r.y) {
+            data.removeAfter(l.y)
+            r.y--
+        }
+        if (l.x < r.x)
+            data.get(l.y).removeRange(l.x, r.x)
+        cursor.y = l.y
+        cursor.x = l.x
+        if (multiRow && aliveFirstRow) {
+            cursor.y--
+            cursor.x = data.get(cursor.y).size
+            mergeRows()
+        }
+        editUpdate()
     }
 }

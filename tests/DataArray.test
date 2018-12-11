@@ -1,7 +1,6 @@
   package ds 
 // Hellofffff
 // not a commment zzz
-/* comment */
 
 class DataArray<T> {
     private val data = ArrayList<T>()

@@ -114,7 +114,8 @@ class EditorWindow : JFrame() {
         if (needSave) {
             val options = arrayOf<Any>("Save & Exit", "Just exit", "Cancel")
             val choice = JOptionPane.showOptionDialog(this, "There are unsaved changes. What to do?",
-                "Save changes?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0])
+                "Save changes?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[2])
+            println("choice = $choice")
             when (choice) {
                 0 -> {
                     with (tabbedPane) {
