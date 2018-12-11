@@ -207,9 +207,16 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                         }
                         VK_TAB -> {
                             for (i in 0 until tabSize)
-                                canvas.editor.editTypeChar(' ')
+                                editTypeChar(' ')
                         }
-                        else -> return // skip moving
+                        VK_Y -> {
+                            if (e.isControlDown)
+                                editDeleteLine()
+                        }
+                        VK_D -> {
+                            if (e.isControlDown)
+                                editDuplicateLine()
+                        }
                     }
                 }
             }

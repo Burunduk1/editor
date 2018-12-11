@@ -48,7 +48,7 @@ class Editor {
 
     fun save(output: PrintWriter) { // i do not use BufferedWriter to output '\n' properly
         for (i in 0 until data.size) {
-            output.println(data.get(i).toList().map {it.char}.toCharArray())
+            output.println(data.get(i).map {it.char}.toCharArray())
         }
         saved = true
     }
@@ -66,6 +66,7 @@ class Editor {
     fun registerNavigateListener(f: () -> Unit) {
         navigateListeners.add(f)
     }
+
     private fun editUpdate() {
         saved = false
         colorer.apply()
@@ -84,11 +85,8 @@ class Editor {
         editUpdate()
     }
     private fun mergeRows() {
-        val toMove = data.get(cursor.y + 1)
         val row = data.get(cursor.y)
-        val pos = row.size
-        while (toMove.size > 0)
-            row.insertAfter(pos, toMove.pop())
+        row.insertAfter(row.size, data.get(cursor.y + 1))
         data.removeAfter(cursor.y + 1)
     }
     fun editBackspace() {
@@ -122,6 +120,24 @@ class Editor {
             row.insertAfter(cursor.x, oldRow.pop())
         data.insertAfter(cursor.y + 1, row)
         cursor.y++
+        editUpdate()
+    }
+    fun editDeleteLine() {
+        data.removeAfter(cursor.y)
+        if (cursor.y == data.size) {
+            if (cursor.y == 0)
+                data.push(DataArray())
+            else
+                cursor.y--
+        }
+        editUpdate()
+    }
+
+    private fun subArray(i: Int, start: Int, end: Int) = data.get(i).subArray(start, end).asSequence().map {it.char}
+    fun editDuplicateLine() {
+        data.insertAfter(cursor.y, DataArray<CodeChar>())
+        cursor.y++
+        data.get(cursor.y - 1).insertAfter(0, subArray(cursor.y, 0, data.get(cursor.y).size).map {CodeChar(it)}.asIterable())
         editUpdate()
     }
 

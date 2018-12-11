@@ -1,6 +1,6 @@
 package ds
 
-class DataArray<T> {
+class DataArray<T> : Iterable<T> {
     private val data = ArrayList<T>()
     fun get(i: Int) = data[i]
     fun get(i: Int, default: T) = if (i < size) data[i] else default
@@ -26,7 +26,29 @@ class DataArray<T> {
     fun toList(): List<T> = data.toList()
     val size: Int
         get() = data.size
-    fun clear() {
-        data.clear()
+    fun clear() = data.clear()
+
+    // mass operations
+    fun insertAfter(i: Int, array: Iterable<T>) {
+        var pos = i
+        for (t in array)
+            insertAfter(pos++, t)
+    }
+
+    class DataArrayIterator<T>(private val data: DataArray<T>, private var index: Int,
+                               private val border: Int = data.size) : Iterator<T> {
+        override fun next(): T {
+            return data.get(index++)
+        }
+
+        override fun hasNext(): Boolean {
+            return index < border
+        }
+    }
+    override fun iterator(): Iterator<T> {
+        return DataArrayIterator(this,0)
+    }
+    fun subArray(start: Int, end: Int): Iterator<T> {
+        return DataArrayIterator(this, start, end)
     }
 }

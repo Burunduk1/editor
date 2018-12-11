@@ -8,9 +8,9 @@ enum class CodeType {
 
 class CodeChar(var char: Char, var type: CodeType = CodeType.BASE)
 
-class Parser(val data: DataArray<DataArray<CodeChar>>) {
+class Parser(private val data: DataArray<DataArray<CodeChar>>) {
     companion object {
-        const val whitespaces = "\t\n\r "
+        private const val whitespaces = "\t\n\r "
         fun isWhitespace(char: Char): Boolean {
             return whitespaces.indexOf(char) != -1
         }
@@ -107,7 +107,6 @@ class Parser(val data: DataArray<DataArray<CodeChar>>) {
             }
             val str = getRow(i)
             for (match in Parser.keywordsRegex.findAll(str)) {
-                println("${match.groups[2]!!.range} = ${match.groups[2]!!.range.first} .. ${match.groups[2]!!.range.last}")
                 for (j in match.groups[2]!!.range) {
                     if (row.get(j).type == CodeType.COMMENT) continue
                     row.get(j).type = CodeType.KEYWORD
