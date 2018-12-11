@@ -111,25 +111,27 @@ class Editor {
     fun editNewline() {
         val oldRow = data.get(cursor.y)
         val moveLen = maxOf(0, oldRow.size - cursor.x)
-        cursor.x++
-        navigateHome()
-        cursor.y++
+        navigateHome(true)
         val row = DataArray<CodeChar>()
         for (i in 0 until cursor.x)
             row.push(CodeChar(' '))
         for (i in 0 until moveLen)
             row.insertAfter(cursor.x, oldRow.pop())
-        data.insertAfter(cursor.y, row)
+        data.insertAfter(cursor.y + 1, row)
+        cursor.y++
         editUpdate()
     }
 
-    fun navigateHome() {
+    fun navigateHome(strict: Boolean = false) {
         var i = 0
         val row = data.get(cursor.y)
         while (i < row.size && Parser.isWhitespace(row.get(i).char))
             i++
 //        println("i = $i, x = ${cursor.x}, char = ${row.get(i).char}")
-        cursor.x = if (i >= cursor.x) 0 else i
+        if (!strict)
+            cursor.x = if (i >= cursor.x) 0 else i
+        else
+            cursor.x = if (i > cursor.x) 0 else i
         navigateUpdate()
     }
     fun navigateEnd() {

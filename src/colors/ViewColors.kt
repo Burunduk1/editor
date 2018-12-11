@@ -17,6 +17,7 @@ val rowBackgroundEven: Color = Color.WHITE
 fun color(c: CodeType) = when (c) {
     CodeType.BASE -> Color.BLACK
     CodeType.KEYWORD -> Color(0, 40, 150)
+    CodeType.NUMBER -> Color(0, 0, 255)
     CodeType.OPERATOR -> Color(100, 100, 100)
     else -> Color.BLACK
 }

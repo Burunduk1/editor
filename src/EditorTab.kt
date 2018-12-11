@@ -96,6 +96,9 @@ class EditorCanvas(val editor: Editor) : JComponent() {
 
 class EditorTab(var file: File?) : JPanel(BorderLayout()) {
     private val editor = Editor()
+    companion object {
+        val tabSize: Int by lazy { 4 }
+    }
     val canvas = EditorCanvas(editor)
     init {
         this.add(canvas)
@@ -104,7 +107,7 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
             editor.load(files.openFileForReading(file!!))
         }
         addKeyListener(object : KeyAdapter() {
-            val skippedKeys = arrayOf(8, 10, 127)
+            val skippedKeys = arrayOf(8, 9, 10, 127)
             override fun keyTyped(e: KeyEvent) {
                 val code = e.keyChar.toInt()
                 if (skippedKeys.indexOf(code) != -1 || e.isAltDown || e.isControlDown || e.isActionKey || e.isMetaDown) {
@@ -143,6 +146,10 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                         }
                         KeyEvent.VK_END -> {
                             navigateEnd()
+                        }
+                        KeyEvent.VK_TAB -> {
+                            for (i in 0 until tabSize)
+                                canvas.editor.editTypeChar(' ')
                         }
                         else -> return // skip moving
                     }

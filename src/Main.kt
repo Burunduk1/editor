@@ -30,6 +30,7 @@ class EditorWindow : JFrame() {
         newTab(File("${sourceDir}WrongName"))
         newTab(File("${sourceDir}DataArray.test"))
         isFocusable = true
+        focusTraversalKeysEnabled = false
         addKeyListener(object : KeyAdapter() {
             override fun keyTyped(e: KeyEvent) {
                 for (listener in currentTab.keyListeners)

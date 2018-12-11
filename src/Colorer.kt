@@ -3,7 +3,7 @@ package parser
 import ds.DataArray
 
 enum class CodeType {
-    BASE, WHITESPACE, EMPTY, KEYWORD, OPERATOR
+    BASE, WHITESPACE, EMPTY, KEYWORD, OPERATOR, NUMBER
 }
 
 class CodeChar(var char: Char, var type: CodeType = CodeType.BASE)
@@ -77,6 +77,9 @@ class Parser(val data: DataArray<DataArray<CodeChar>>) {
         val keywordsRegex : Regex by lazy {
             Regex("""(^|[^\w\d_])(""" + keywords.joinToString("|") + """)($|[^\w\d_])""")
         }
+        val numbersRegex : Regex by lazy {
+            Regex("""(^|[^\w\d_])(\d+)($|[^\w\d_])""")
+        }
     }
 
     fun apply() {
@@ -95,7 +98,11 @@ class Parser(val data: DataArray<DataArray<CodeChar>>) {
                 for (j in match.groups[2]!!.range) {
                     row.get(j).type = CodeType.KEYWORD
                 }
-                //println(match.groups[2])
+            }
+            for (match in Parser.numbersRegex.findAll(str)) {
+                for (j in match.groups[2]!!.range) {
+                    row.get(j).type = CodeType.NUMBER
+                }
             }
         }
     }
