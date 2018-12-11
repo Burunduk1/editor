@@ -1,3 +1,4 @@
+import ds.CmpPair
 import files.checkFileForWriting
 import files.openFileForWriting
 import files.selectFile
@@ -25,6 +26,17 @@ class EditorCanvas(val editor: Editor) : JComponent() {
     private val indexSpace: Int by lazy { w * 5 }
     private val wPadding: Int by lazy { w / 2 }
     private val hPadding: Int by lazy { 2 }
+
+    var selectMode = false
+    var selectStart = editor.cursor.pair
+
+    private fun isSelected(row: Int, column: Int): Boolean {
+        if (!selectMode)
+            return false
+        val p = CmpPair(row, column)
+        val end = editor.cursor.pair
+        return if (selectStart < end) selectStart <= p && p < end else selectStart > p && p >= end
+    }
 
     val rowsOnScreen: Int
         get() = height / h
@@ -57,6 +69,7 @@ class EditorCanvas(val editor: Editor) : JComponent() {
 
     override fun paintComponent(g: Graphics) {
         //log()
+        println("selected: mode=${selectMode} start=${selectStart} end=${editor.cursor.pair}")
         if (g is Graphics2D) {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
@@ -66,6 +79,10 @@ class EditorCanvas(val editor: Editor) : JComponent() {
                 g.color = if (i % 2 == 1) colors.rowBackgroundOdd else colors.rowBackgroundEven
                 g.fillRect(0, i * h - y, width, h)
                 for (j in 0 until 80) {
+                    if (isSelected(i, j)) {
+                        g.color = colors.selectModeBackground
+                        g.fillRect(indexSpace + j * w + wPadding, i * h - y, w, h)
+                    }
                     val c = editor.get(i, j)
                     g.setFont(if (colors.isBold(c.type)) boldFont else baseFont)
                     g.color = colors.color(c.type)
@@ -99,6 +116,7 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
         val tabSize: Int by lazy { 4 }
     }
     val canvas = EditorCanvas(editor)
+
     init {
         this.add(canvas)
         file?.let {
@@ -117,6 +135,17 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                 canvas.editor.editTypeChar(e.keyChar)
             }
             override fun keyPressed(e: KeyEvent) {
+                if (canvas.selectMode && !e.isShiftDown) {
+                    canvas.selectMode = false
+                }
+                with (canvas) {
+                    if (e.isShiftDown) {
+                        if (!selectMode) {
+                            selectStart = editor.cursor.pair
+                            selectMode = true
+                        }
+                    }
+                }
                 with (canvas.editor) {
                     when (e.keyCode) {
                         KeyEvent.VK_UP -> {

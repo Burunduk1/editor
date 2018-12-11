@@ -1,3 +1,4 @@
+import ds.CmpPair
 import parser.*
 import ds.DataArray
 import java.io.*
@@ -22,6 +23,8 @@ class Editor {
                 _x = value
                 correctX()
             }
+        val pair: CmpPair<Int, Int>
+            get() = CmpPair(y, x)
 
         fun correctX() { _x = maxOf(0, minOf(_x, data.get(_y).size)) }
         private fun correctY() { _y = maxOf(0, minOf(_y, data.size - 1)) }

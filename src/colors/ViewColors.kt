@@ -13,6 +13,7 @@ val cursorColor: Color = Color.BLACK
 
 val rowBackgroundOdd = grey(245)
 val rowBackgroundEven: Color = Color.WHITE
+val selectModeBackground = Color(220, 220, 255)
 
 fun color(c: CodeType) = when (c) {
     CodeType.BASE -> Color.BLACK
