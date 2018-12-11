@@ -5,6 +5,7 @@ import files.selectFile
 import java.awt.*
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
+import java.awt.event.KeyEvent.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
@@ -135,65 +136,76 @@ class EditorTab(var file: File?) : JPanel(BorderLayout()) {
                 canvas.editor.editTypeChar(e.keyChar)
             }
             override fun keyPressed(e: KeyEvent) {
-                if (canvas.selectMode && !e.isShiftDown) {
+                val isNavigation = arrayOf(
+                    VK_UP,
+                    VK_DOWN,
+                    VK_LEFT,
+                    VK_RIGHT,
+                    VK_PAGE_UP,
+                    VK_PAGE_DOWN,
+                    VK_HOME,
+                    VK_END
+                ).indexOf(e.keyCode) != -1
+                if (!isNavigation || !e.isShiftDown) {
                     canvas.selectMode = false
-                }
-                with (canvas) {
-                    if (e.isShiftDown) {
-                        if (!selectMode) {
-                            selectStart = editor.cursor.pair
-                            selectMode = true
+                } else {
+                    with(canvas) {
+                        if (e.isShiftDown) {
+                            if (!selectMode) {
+                                selectStart = editor.cursor.pair
+                                selectMode = true
+                            }
                         }
                     }
                 }
-                with (canvas.editor) {
+                with(canvas.editor) {
                     when (e.keyCode) {
-                        KeyEvent.VK_UP -> {
+                        VK_UP -> {
                             navigateUp(1)
                         }
-                        KeyEvent.VK_DOWN -> {
+                        VK_DOWN -> {
                             navigateDown(1)
                         }
-                        KeyEvent.VK_PAGE_UP -> {
+                        VK_PAGE_UP -> {
                             navigateUp(maxOf(1, canvas.rowsOnScreen - 1))
                         }
-                        KeyEvent.VK_PAGE_DOWN -> {
+                        VK_PAGE_DOWN -> {
                             navigateDown(maxOf(1, canvas.rowsOnScreen - 1))
                         }
-                        KeyEvent.VK_LEFT -> {
+                        VK_LEFT -> {
                             if (e.isControlDown)
                                 navigateTermLeft()
                             else
                                 navigateLeft()
                         }
-                        KeyEvent.VK_RIGHT -> {
+                        VK_RIGHT -> {
                             if (e.isControlDown)
                                 navigateTermRight()
                             else
                                 navigateRight()
                         }
-                        KeyEvent.VK_DELETE -> {
+                        VK_DELETE -> {
                             editDelete()
                         }
-                        KeyEvent.VK_BACK_SPACE -> {
+                        VK_BACK_SPACE -> {
                             editBackspace()
                         }
-                        KeyEvent.VK_ENTER -> {
+                        VK_ENTER -> {
                             editNewline()
                         }
-                        KeyEvent.VK_HOME -> {
+                        VK_HOME -> {
                             if (e.isControlDown)
                                 navigateToBegin()
                             else
                                 navigateHome()
                         }
-                        KeyEvent.VK_END -> {
+                        VK_END -> {
                             if (e.isControlDown)
                                 navigateToEnd()
                             else
                                 navigateEnd()
                         }
-                        KeyEvent.VK_TAB -> {
+                        VK_TAB -> {
                             for (i in 0 until tabSize)
                                 canvas.editor.editTypeChar(' ')
                         }

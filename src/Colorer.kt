@@ -3,7 +3,7 @@ package parser
 import ds.DataArray
 
 enum class CodeType {
-    BASE, WHITESPACE, EMPTY, KEYWORD, OPERATOR, NUMBER
+    BASE, WHITESPACE, EMPTY, KEYWORD, OPERATOR, NUMBER, COMMENT
 }
 
 class CodeChar(var char: Char, var type: CodeType = CodeType.BASE)
@@ -80,29 +80,77 @@ class Parser(val data: DataArray<DataArray<CodeChar>>) {
         val numbersRegex : Regex by lazy {
             Regex("""(^|[^\w\d_])(\d+)($|[^\w\d_])""")
         }
+        val commentLine : Regex by lazy {
+            Regex("""//.*[\n]""")
+        }
+        val commentBlock : Regex by lazy {
+            Regex("""[/][*](.|\n)*?[*][/]""")
+        }
     }
 
+    private fun getRow(i: Int) = data.get(i).toList().map {it.char}.joinToString("")
+    private fun getText() = (0 until data.size).joinToString("\n") { getRow(it) }
+
     fun apply() {
+        markComments()
+
         for (i in 0 until data.size) {
             val row = data.get(i)
             for (j in 0 until row.size) {
                 val c = row.get(j)
+                if (c.type == CodeType.COMMENT) continue
                 c.type = when {
                     Parser.isWhitespace(c.char) -> CodeType.WHITESPACE
                     Parser.canBeInName(c.char) -> CodeType.BASE
                     else -> CodeType.OPERATOR
                 }
             }
-            val str = row.toList().map {it.char}.joinToString("")
+            val str = getRow(i)
             for (match in Parser.keywordsRegex.findAll(str)) {
+                println("${match.groups[2]!!.range} = ${match.groups[2]!!.range.first} .. ${match.groups[2]!!.range.last}")
                 for (j in match.groups[2]!!.range) {
+                    if (row.get(j).type == CodeType.COMMENT) continue
                     row.get(j).type = CodeType.KEYWORD
                 }
             }
             for (match in Parser.numbersRegex.findAll(str)) {
                 for (j in match.groups[2]!!.range) {
+                    if (row.get(j).type == CodeType.COMMENT) continue
                     row.get(j).type = CodeType.NUMBER
                 }
+            }
+        }
+    }
+
+    private fun markComments() {
+        val text = getText()
+        var rightBorder = 0
+        val mark = Array(text.length) {false}
+        fun commentRange(range: IntRange) {
+            for (i in range)
+                mark[i] = true
+            rightBorder = range.last + 1
+        }
+        while (true) {
+            val line = Parser.commentLine.find(text, rightBorder)
+            val block = Parser.commentBlock.find(text, rightBorder)
+            if (line == null && block == null)
+                break
+            if (line != null && (block == null || line.range.first < block.range.first))
+                commentRange(line.range)
+            else
+                commentRange(block!!.range)
+
+        }
+        var row = 0
+        var column = 0
+        for (i in 0 until text.length) {
+            if (text[i] != '\n')
+                data.get(row).get(column).type = if (mark[i]) CodeType.COMMENT else CodeType.BASE
+            column++
+            if (text[i] == '\n') {
+                row++
+                column = 0
             }
         }
     }

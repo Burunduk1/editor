@@ -20,6 +20,7 @@ fun color(c: CodeType) = when (c) {
     CodeType.KEYWORD -> Color(0, 40, 150)
     CodeType.NUMBER -> Color(0, 0, 255)
     CodeType.OPERATOR -> Color(100, 100, 100)
+    CodeType.COMMENT -> Color(0xAA, 0x55, 0)
     else -> Color.BLACK
 }
 fun isBold(c: CodeType) = (c == CodeType.KEYWORD)
