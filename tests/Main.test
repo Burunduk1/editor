@@ -3,14 +3,14 @@ import java.awt.event.*
 import java.io.File
 import javax.swing.*
 
-class EditorWindow : JFrame() {
+class model.EditorWindow : JFrame() {
     private val tabbedPane = JTabbedPane()
     private val sourceDir = "C:\\Users\\SK\\IdeaProjects\\editor\\src\\"
 
     init {
         createMenubar()
         this.iconImage = images.loadImage("icon.png")
-        this.title = "Java Editor"
+        this.title = "Java model.Editor"
         this.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         this.setSize(600, 400)
         this.setLocationRelativeTo(null)
@@ -19,7 +19,7 @@ class EditorWindow : JFrame() {
             println("tabbed paned: ${tabbedPane.tabCount} tabs")
             if (tabbedPane.tabCount > 0) {
                 print("selected tab: ")
-                (tabbedPane.selectedComponent as EditorTab).canvas.log()
+                (tabbedPane.selectedComponent as model.EditorTab).canvas.log()
             }
         }
         newTab(File("${sourceDir}Main.kt"))
@@ -65,7 +65,7 @@ class EditorWindow : JFrame() {
     private fun newTab(f: File? = null) {
         @Suppress("NAME_SHADOWING") val f = files.checkFileForReading(f)
         println("newTab: ${f?.name}")
-        val tab = EditorTab(f)
+        val tab = model.EditorTab(f)
         tabbedPane.addTab(tab.title, tab)
         tabbedPane.selectedIndex = tabbedPane.tabCount - 1
     }
@@ -81,9 +81,9 @@ class EditorWindow : JFrame() {
     }
 }
 
-fun main(args: Array<String>) {
+fun tests.main(args: Array<String>) {
     EventQueue.invokeLater {
-        val frame = EditorWindow()
+        val frame = model.EditorWindow()
         frame.revalidate()
         frame.isVisible = true
     }

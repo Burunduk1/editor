@@ -1,42 +1,26 @@
-import ds.CmpPair
-import parser.*
-import ds.DataArray
+package model
+
+import model.ds.DataArray
+import model.ds.TextPosition
 import java.io.*
 
-typealias Data = DataArray<DataArray<CodeChar>>
-
 class Editor {
-    private var clipboard: Data? = null
-    private val data = Data()
+    private var clipboard: EditorData? = null
+    private val data = EditorData()
     private val colorer = Parser(data)
-    private val emptyRow = DataArray<CodeChar>()
-    private val emptyChar = CodeChar(' ', CodeType.EMPTY)
-    var saved = true
-
-    class Cursor(private var _x: Int, private var _y: Int, private val data: Data) {
-        var y: Int
-            get() = _y
-            set(value) {
-                _y = value
-                correctY()
-            }
-        var x: Int
-            get() = _x
-            set(value) {
-                _x = value
-                correctX()
-            }
-        val pair: CmpPair<Int, Int>
-            get() = CmpPair(y, x)
-
-        fun correctX() { _x = maxOf(0, minOf(_x, data.get(_y).size)) }
-        private fun correctY() { _y = maxOf(0, minOf(_y, data.size - 1)) }
-    }
     val cursor = Cursor(0, 0, data)
+    var saved = true
 
     init {
         data.push(DataArray())
     }
+
+    fun get(row: Int, column: Int): CodeChar = data.get(row, emptyRow).get(column, emptyChar)
+
+    val rowCount: Int
+        get() = data.size
+
+    /** load/save routine */
 
     fun load(input: BufferedReader) {
         data.clear()
@@ -55,11 +39,8 @@ class Editor {
         }
         saved = true
     }
-    fun get(row: Int, column: Int): CodeChar = data.get(row, emptyRow).get(column, emptyChar)
 
-    val rowCount: Int
-        get() = data.size
-    private fun rowLen() = data.get(cursor.y).size
+    /** listeners & updaters */
 
     private val editListeners = ArrayList<() -> Unit>()
     private val navigateListeners = ArrayList<() -> Unit>()
@@ -80,6 +61,8 @@ class Editor {
         for (f in navigateListeners)
             f()
     }
+
+    /** base edit functionality */
 
     fun editTypeChar(char: Char) {
         cursor.correctX()
@@ -135,22 +118,19 @@ class Editor {
         }
         editUpdate()
     }
-
-    private fun subArray(i: Int, start: Int, end: Int, buffer: Data = data) = buffer.get(i).slice(start, end).asSequence().map {CodeChar(it.char, it.type)}.asIterable()
-    private fun copyOfRow(i: Int, buffer: Data = data) = subArray(i, 0, buffer.get(i).size, buffer)
-
     fun editDuplicateLine() {
-        data.insertAfter(cursor.y, DataArray(copyOfRow(cursor.y)))
+        data.insertAfter(cursor.y, DataArray(data.copyOfRow(cursor.y)))
         cursor.y++
         editUpdate()
     }
+
+    /** base navigate functionality */
 
     fun navigateHome(strict: Boolean = false) {
         var i = 0
         val row = data.get(cursor.y)
         while (i < row.size && Parser.isWhitespace(row.get(i).char))
             i++
-//        println("i = $i, x = ${cursor.x}, char = ${row.get(i).char}")
         if (!strict)
             cursor.x = if (i >= cursor.x) 0 else i
         else
@@ -230,19 +210,23 @@ class Editor {
         navigateUpdate()
     }
 
-    fun copyToClipboard(start: CmpPair<Int, Int>, end: CmpPair<Int, Int>) {
+    /** clipboard routine */
+
+    private fun rowLen() = data.get(cursor.y).size
+
+    fun copyToClipboard(start: TextPosition, end: TextPosition) {
         val l = minOf(start, end).copy()
         val r = maxOf(start, end).copy()
         println("copy range: $l $r")
-        val buffer = Data()
+        val buffer = EditorData()
         if (l.y < r.y) {
-            buffer.push(DataArray(subArray(l.y, l.x, data.get(l.y).size)))
+            buffer.push(DataArray(data.subArray(l.y, l.x, data.get(l.y).size)))
             l.y++
             l.x = 0
         }
         while (l.y < r.y)
-            buffer.push(DataArray(copyOfRow(l.y++)))
-        buffer.push(DataArray(subArray(l.y, l.x, r.x)))
+            buffer.push(DataArray(data.copyOfRow(l.y++)))
+        buffer.push(DataArray(data.subArray(l.y, l.x, r.x)))
         clipboard = buffer
     }
 
@@ -251,18 +235,16 @@ class Editor {
             if (it.size >= 1) {
                 cursor.correctX()
                 if (it.size == 1) {
-                    data.get(cursor.y).insertAfter(cursor.x, copyOfRow(0, it))
+                    data.get(cursor.y).insertAfter(cursor.x, it.copyOfRow(0))
                 } else {
                     editNewline()
-//                    for (row in it)
-//                        println(row.toList().map { x -> x.char }.joinToString(","))
-                    data.get(cursor.y - 1).insertAfter(data.get(cursor.y - 1).size, copyOfRow(0, it))
+                    data.get(cursor.y - 1).insertAfter(data.get(cursor.y - 1).size, it.copyOfRow(0))
                     println("${cursor.y} < ${data.size}$")
                     for (i in 1 until it.size - 1) {
-                        data.insertAfter(cursor.y, DataArray(copyOfRow(i, it)))
+                        data.insertAfter(cursor.y, DataArray(it.copyOfRow(i)))
                         cursor.y++
                     }
-                    data.get(cursor.y).insertAfter(cursor.x, copyOfRow(it.size - 1, it))
+                    data.get(cursor.y).insertAfter(cursor.x, it.copyOfRow(it.size - 1))
                 }
                 cursor.x += it.get(it.size - 1).size
             }
@@ -270,7 +252,7 @@ class Editor {
         editUpdate()
     }
 
-    fun editDeleteBlock(start: CmpPair<Int, Int>, end: CmpPair<Int, Int>) {
+    fun deleteBlock(start: TextPosition, end: TextPosition) {
         val l = minOf(start, end).copy()
         val r = maxOf(start, end).copy()
         println("delete range: $l $r")

@@ -1,4 +1,4 @@
-package ds
+package model.ds
 
 class DataArray<T>() : Iterable<T> {
     private val data = ArrayList<T>()
@@ -28,7 +28,6 @@ class DataArray<T>() : Iterable<T> {
         get() = data.size
     fun clear() = data.clear()
 
-    // mass operations
     fun insertAfter(i: Int, array: Iterable<T>) {
         var pos = i
         for (t in array)
@@ -49,7 +48,7 @@ class DataArray<T>() : Iterable<T> {
         }
     }
     override fun iterator(): Iterator<T> {
-        return DataArrayIterator(this,0)
+        return DataArrayIterator(this, 0)
     }
     fun slice(start: Int, end: Int): Iterator<T> { // [start, end)
         return DataArrayIterator(this, start, end)

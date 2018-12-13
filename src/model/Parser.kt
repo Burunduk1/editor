@@ -1,14 +1,6 @@
-package parser
+package model
 
-import ds.DataArray
-
-enum class CodeType {
-    BASE, WHITESPACE, EMPTY, KEYWORD, OPERATOR, NUMBER, COMMENT
-}
-
-class CodeChar(var char: Char, var type: CodeType = CodeType.BASE)
-
-class Parser(private val data: DataArray<DataArray<CodeChar>>) {
+class Parser(private val data: EditorData) {
     companion object {
         private const val whitespaces = "\t\n\r "
         fun isWhitespace(char: Char): Boolean {
@@ -85,9 +77,6 @@ class Parser(private val data: DataArray<DataArray<CodeChar>>) {
         }
     }
 
-    private fun getRow(i: Int) = data.get(i).toList().map {it.char}.joinToString("")
-    private fun getText() = (0 until data.size).joinToString("\n") { getRow(it) }
-
     fun apply() {
         markComments()
 
@@ -102,7 +91,7 @@ class Parser(private val data: DataArray<DataArray<CodeChar>>) {
                     else -> CodeType.OPERATOR
                 }
             }
-            val str = getRow(i)
+            val str = data.getRow(i)
             for (match in Parser.keywordsRegex.findAll(str)) {
                 for (j in match.groups[2]!!.range) {
                     if (row.get(j).type == CodeType.COMMENT) continue
@@ -119,7 +108,7 @@ class Parser(private val data: DataArray<DataArray<CodeChar>>) {
     }
 
     private fun markComments() {
-        val text = getText()
+        val text = data.getText()
         val mark = Array(text.length) {false}
         for (match in Parser.commentRegex.findAll(text))
             for (i in match.range)

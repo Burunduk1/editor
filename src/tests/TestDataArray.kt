@@ -1,4 +1,6 @@
-import ds.DataArray
+package tests
+
+import model.ds.DataArray
 import java.util.*
 import kotlin.test.currentStackTrace
 
