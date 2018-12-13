@@ -14,7 +14,8 @@ internal class EditorTest {
         val e = Editor()
         val f = File("tests/Main.test")
         val tmp = File("tests/tmp.test")
-        openFileForReading(f).use { e.load(it) }
+        openFileForReading(f).use { e.load(it, false) }
+        assertEquals(e.text.length, 2654)
         tmp.delete()
         assertFalse(tmp.exists())
         openFileForWriting(tmp).use { e.save(it) }

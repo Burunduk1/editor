@@ -3,6 +3,7 @@ package model
 import model.ds.DataArray
 import model.ds.TextPosition
 import java.io.*
+import kotlin.system.measureTimeMillis
 
 class Editor {
     private var clipboard: EditorData? = null
@@ -16,21 +17,24 @@ class Editor {
     }
 
     fun get(row: Int, column: Int): CodeChar = data.get(row, emptyRow).get(column, emptyChar)
+    val text: String
+        get() = data.getText()
 
     val rowCount: Int
         get() = data.size
 
     /** load/save routine */
 
-    fun load(input: BufferedReader) {
+    fun load(input: BufferedReader, apply: Boolean = true) {
         data.clear()
         for (s in input.readLines()) {
             val line = DataArray<CodeChar>()
-            s.forEach {line.push(CodeChar(it, CodeType.BASE))}
+            s.forEach { line.push(CodeChar(it, CodeType.BASE))}
             data.push(line)
         }
         saved = true
-        colorer.apply()
+        if (apply)
+            colorer.apply()
     }
 
     fun save(output: PrintWriter) { // i do not use BufferedWriter to output '\n' properly
@@ -53,7 +57,9 @@ class Editor {
 
     private fun editUpdate() {
         saved = false
-        colorer.apply()
+        println("colorer.apply: time = %d".format(measureTimeMillis {
+            colorer.apply()
+        }))
         for (f in editListeners)
             f()
     }
