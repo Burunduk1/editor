@@ -70,7 +70,7 @@ class Parser(private val data: EditorData) {
             Regex("""(^|[^\w\d_])(""" + keywords.joinToString("|") + """)(?![\w\d_])""")
         }
         val numbersRegex : Regex by lazy {
-            Regex("""(^|[^\w\d_])(\d+)($|[^\w\d_])""")
+            Regex("""(^|[^\w\d_])(\d+)(?![\w\d_])""")
         }
         val commentRegex : Regex by lazy {
             Regex("""(//.*($|[\n]))|([/][*](.|\n)*?[*][/])""")
@@ -127,6 +127,8 @@ class Parser(private val data: EditorData) {
                     for (k in 0..1) {
                         if (c.char == quote[k]) {
                             if (prev[k] != -1) {
+                                if (prev[k xor 1] > prev[k])
+                                    prev[k xor 1] = -1
                                 for (j in 0 .. i - prev[k]) {
                                     val cell = row[column - j]
                                     if (cell.type != CodeType.COMMENT) {
