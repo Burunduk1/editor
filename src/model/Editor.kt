@@ -165,26 +165,26 @@ class Editor {
     }
     fun navigateTermRight() {
         val row = data[cursor.y]
+        cursor.correctX()
         if (cursor.x == row.size)
             return
         fun char() = row[cursor.x].char
         when {
-            Parser.isWhitespace(char()) -> {
-                while (cursor.x < row.size && Parser.isWhitespace(char()))
-                    cursor.x++
-            }
             Parser.canBeInName(char()) -> {
                 while (cursor.x < row.size && Parser.canBeInName(char()))
                     cursor.x++
-                while (cursor.x < row.size && Parser.isWhitespace(char()))
-                    cursor.x++
             }
-            else -> cursor.x++
+            !Parser.isWhitespace(char()) -> {
+                cursor.x++
+            }
         }
+        while (cursor.x < row.size && Parser.isWhitespace(char()))
+            cursor.x++
         navigateUpdate()
     }
     fun navigateTermLeft() {
         val row = data[cursor.y]
+        cursor.correctX()
         if (cursor.x == 0)
             return
         fun char() = row[cursor.x - 1].char
