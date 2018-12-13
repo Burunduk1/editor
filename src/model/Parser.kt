@@ -73,18 +73,18 @@ class Parser(private val data: EditorData) {
             Regex("""(^|[^\w\d_])(\d+)($|[^\w\d_])""")
         }
         val commentRegex : Regex by lazy {
-            Regex("""(//.*[\n])|([/][*](.|\n)*?[*][/])""")
+            Regex("""(//.*($|[\n]))|([/][*](.|\n)*?[*][/])""")
         }
     }
 
     fun apply() {
-        markComments()
+        markCommentsAndStrings()
 
         for (i in 0 until data.size) {
             val row = data.get(i)
             for (j in 0 until row.size) {
                 val c = row.get(j)
-                if (c.type == CodeType.COMMENT) continue
+                if (c.type == CodeType.COMMENT || c.type == CodeType.STRING) continue
                 c.type = when {
                     Parser.isWhitespace(c.char) -> CodeType.WHITESPACE
                     Parser.canBeInName(c.char) -> CodeType.BASE
@@ -92,35 +92,63 @@ class Parser(private val data: EditorData) {
                 }
             }
             val str = data.getRow(i)
-            for (match in Parser.keywordsRegex.findAll(str)) {
-                for (j in match.groups[2]!!.range) {
-                    if (row.get(j).type == CodeType.COMMENT) continue
-                    row.get(j).type = CodeType.KEYWORD
-                }
-            }
-            for (match in Parser.numbersRegex.findAll(str)) {
-                for (j in match.groups[2]!!.range) {
-                    if (row.get(j).type == CodeType.COMMENT) continue
-                    row.get(j).type = CodeType.NUMBER
+            for (pair in mapOf(CodeType.KEYWORD to Parser.keywordsRegex, CodeType.NUMBER to Parser.numbersRegex)) {
+                val type = pair.key
+                for (match in pair.value.findAll(str)) {
+                    for (j in match.groups[2]!!.range) {
+                        val c = row.get(j)
+                        if (c.type == CodeType.COMMENT || c.type == CodeType.STRING) continue
+                        c.type = type
+                    }
                 }
             }
         }
     }
 
-    private fun markComments() {
+    private fun markCommentsAndStrings() {
         val text = data.getText()
         val mark = Array(text.length) {false}
         for (match in Parser.commentRegex.findAll(text))
             for (i in match.range)
                 mark[i] = true
-        var row = 0
+        var rowI = 0
+        var row = data.get(rowI)
         var column = 0
+        val prev = arrayOf(-1, -1)
+        val quote = arrayOf('"', '\'')
+
         for (i in 0 until text.length) {
-            if (text[i] != '\n')
-                data.get(row).get(column).type = if (mark[i]) CodeType.COMMENT else CodeType.BASE
+            if (text[i] != '\n') {
+                val c = row.get(column)
+                if (mark[i]) {
+                    c.type = CodeType.COMMENT
+                } else {
+                    c.type = CodeType.BASE
+                    for (k in 0..1) {
+                        if (c.char == quote[k]) {
+                            println("k=$k, i=$i prev=${prev[k]}, row=$rowI column=$column")
+                            if (prev[k] != -1) {
+                                for (j in 0 .. i - prev[k]) {
+                                    val cell = row.get(column - j)
+                                    if (cell.type != CodeType.COMMENT) {
+                                        cell.type = CodeType.STRING
+                                    }
+                                }
+                                prev[k] = -1
+                            } else {
+                                prev[k] = i
+                            }
+                        }
+                    }
+                }
+            } else {
+                prev[0] = -1
+                prev[1] = -1
+            }
             column++
             if (text[i] == '\n') {
-                row++
+                if (++rowI < data.size)
+                    row = data.get(rowI)
                 column = 0
             }
         }

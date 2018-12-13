@@ -27,6 +27,7 @@ class ColorTheme {
         CodeType.NUMBER -> Color(0, 0, 255)
         CodeType.OPERATOR -> Color(100, 100, 100)
         CodeType.COMMENT -> Color(0xAA, 0x55, 0)
+        CodeType.STRING -> Color(0, 0x80, 0)
         else -> Color.BLACK
     }
 
