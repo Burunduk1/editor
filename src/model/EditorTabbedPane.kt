@@ -11,7 +11,7 @@ import javax.swing.JTabbedPane
 import javax.swing.SwingUtilities
 
 class EditorTabbedPane : JTabbedPane() {
-    private val currentTab: EditorTab?
+    val currentTab: EditorTab?
         get() = if (tabCount > 0) (selectedComponent as EditorTab) else null
     private val empty: Boolean
         get() = tabCount == 0

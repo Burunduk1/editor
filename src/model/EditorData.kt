@@ -4,7 +4,7 @@ import model.ds.DataArray
 
 typealias EditorData = DataArray<DataArray<CodeChar>>
 
-fun EditorData.getRow(i: Int) = get(i).toList().map {it.char}.joinToString("")
+fun EditorData.getRow(i: Int) = get(i).asSequence().map { it.char }.joinToString("")
 fun EditorData.getText() = (0 until size).joinToString("\n") { getRow(it) }
 
 fun EditorData.subArray(i: Int, start: Int, end: Int) = get(i).slice(start, end).asSequence().map {CodeChar(it.char, it.type)}.asIterable()
