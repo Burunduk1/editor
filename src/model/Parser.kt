@@ -81,9 +81,9 @@ class Parser(private val data: EditorData) {
         markCommentsAndStrings()
 
         for (i in 0 until data.size) {
-            val row = data.get(i)
+            val row = data[i]
             for (j in 0 until row.size) {
-                val c = row.get(j)
+                val c = row[j]
                 if (c.type == CodeType.COMMENT || c.type == CodeType.STRING) continue
                 c.type = when {
                     Parser.isWhitespace(c.char) -> CodeType.WHITESPACE
@@ -96,7 +96,7 @@ class Parser(private val data: EditorData) {
                 val type = pair.key
                 for (match in pair.value.findAll(str)) {
                     for (j in match.groups[2]!!.range) {
-                        val c = row.get(j)
+                        val c = row[j]
                         if (c.type == CodeType.COMMENT || c.type == CodeType.STRING) continue
                         c.type = type
                     }
@@ -112,24 +112,23 @@ class Parser(private val data: EditorData) {
             for (i in match.range)
                 mark[i] = true
         var rowI = 0
-        var row = data.get(rowI)
+        var row = data[rowI]
         var column = 0
         val prev = arrayOf(-1, -1)
         val quote = arrayOf('"', '\'')
 
         for (i in 0 until text.length) {
             if (text[i] != '\n') {
-                val c = row.get(column)
+                val c = row[column]
                 if (mark[i]) {
                     c.type = CodeType.COMMENT
                 } else {
                     c.type = CodeType.BASE
                     for (k in 0..1) {
                         if (c.char == quote[k]) {
-                            println("k=$k, i=$i prev=${prev[k]}, row=$rowI column=$column")
                             if (prev[k] != -1) {
                                 for (j in 0 .. i - prev[k]) {
-                                    val cell = row.get(column - j)
+                                    val cell = row[column - j]
                                     if (cell.type != CodeType.COMMENT) {
                                         cell.type = CodeType.STRING
                                     }
@@ -148,7 +147,7 @@ class Parser(private val data: EditorData) {
             column++
             if (text[i] == '\n') {
                 if (++rowI < data.size)
-                    row = data.get(rowI)
+                    row = data[rowI]
                 column = 0
             }
         }

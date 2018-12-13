@@ -11,3 +11,17 @@ fun EditorData.subArray(i: Int, start: Int, end: Int) = get(i).slice(start, end)
 fun EditorData.copyOfRow(i: Int) = subArray(i, 0, get(i).size)
 
 val emptyRow = DataArray<CodeChar>()
+
+fun EditorData(text: Iterable<Char>): EditorData {
+    val result = EditorData()
+    result.push(DataArray())
+    for (c in text) {
+        if (c == '\n') {
+            result.push(DataArray())
+        } else {
+            result.last.push(CodeChar(c))
+        }
+    }
+    return result
+}
+fun EditorData.flat() = asIterable().map {it.toList().plus(CodeChar('\n'))}.flatten()

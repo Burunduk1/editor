@@ -39,7 +39,7 @@ class Editor {
 
     fun save(output: PrintWriter) { // i do not use BufferedWriter to output '\n' properly
         for (i in 0 until data.size) {
-            output.println(data.get(i).map {it.char}.toCharArray())
+            output.println(data[i].map {it.char}.toCharArray())
         }
         saved = true
     }
@@ -72,17 +72,17 @@ class Editor {
 
     fun editTypeChar(char: Char) {
         cursor.correctX()
-        data.get(cursor.y).insertAfter(cursor.x, CodeChar(char, CodeType.BASE))
+        data[cursor.y].insertAfter(cursor.x, CodeChar(char, CodeType.BASE))
         cursor.x++
         editUpdate()
     }
     private fun mergeRows() {
-        val row = data.get(cursor.y)
-        row.insertAfter(row.size, data.get(cursor.y + 1))
+        val row = data[cursor.y]
+        row.insertAfter(row.size, data[cursor.y + 1])
         data.removeAfter(cursor.y + 1)
     }
     fun editBackspace() {
-        data.get(cursor.y).removeBefore(cursor.x)
+        data[cursor.y].removeBefore(cursor.x)
         if (cursor.x == 0 && cursor.y > 0) {
             cursor.y--
             cursor.x = rowLen()
@@ -97,12 +97,12 @@ class Editor {
             cursor.x = rowLen()
             mergeRows()
         } else {
-            data.get(cursor.y).removeAfter(cursor.x)
+            data[cursor.y].removeAfter(cursor.x)
         }
         editUpdate()
     }
     fun editNewline() {
-        val oldRow = data.get(cursor.y)
+        val oldRow = data[cursor.y]
         val moveLen = maxOf(0, oldRow.size - cursor.x)
         navigateHome(true)
         val row = DataArray<CodeChar>()
@@ -134,8 +134,8 @@ class Editor {
 
     fun navigateHome(strict: Boolean = false) {
         var i = 0
-        val row = data.get(cursor.y)
-        while (i < row.size && Parser.isWhitespace(row.get(i).char))
+        val row = data[cursor.y]
+        while (i < row.size && Parser.isWhitespace(row[i].char))
             i++
         if (!strict)
             cursor.x = if (i >= cursor.x) 0 else i
@@ -164,10 +164,10 @@ class Editor {
         navigateUpdate()
     }
     fun navigateTermRight() {
-        val row = data.get(cursor.y)
+        val row = data[cursor.y]
         if (cursor.x == row.size)
             return
-        fun char() = row.get(cursor.x).char
+        fun char() = row[cursor.x].char
         when {
             Parser.isWhitespace(char()) -> {
                 while (cursor.x < row.size && Parser.isWhitespace(char()))
@@ -184,10 +184,10 @@ class Editor {
         navigateUpdate()
     }
     fun navigateTermLeft() {
-        val row = data.get(cursor.y)
+        val row = data[cursor.y]
         if (cursor.x == 0)
             return
-        fun char() = row.get(cursor.x - 1).char
+        fun char() = row[cursor.x - 1].char
         when {
             Parser.isWhitespace(char()) -> {
                 while (cursor.x > 0 && Parser.isWhitespace(char()))
@@ -218,7 +218,7 @@ class Editor {
 
     /** clipboard routine */
 
-    private fun rowLen() = data.get(cursor.y).size
+    private fun rowLen() = data[cursor.y].size
 
     fun copyToClipboard(start: TextPosition, end: TextPosition) {
         val l = minOf(start, end).copy()
@@ -226,7 +226,7 @@ class Editor {
         println("copy range: $l $r")
         val buffer = EditorData()
         if (l.y < r.y) {
-            buffer.push(DataArray(data.subArray(l.y, l.x, data.get(l.y).size)))
+            buffer.push(DataArray(data.subArray(l.y, l.x, data[l.y].size)))
             l.y++
             l.x = 0
         }
@@ -241,18 +241,18 @@ class Editor {
             if (it.size >= 1) {
                 cursor.correctX()
                 if (it.size == 1) {
-                    data.get(cursor.y).insertAfter(cursor.x, it.copyOfRow(0))
+                    data[cursor.y].insertAfter(cursor.x, it.copyOfRow(0))
                 } else {
                     editNewline()
-                    data.get(cursor.y - 1).insertAfter(data.get(cursor.y - 1).size, it.copyOfRow(0))
+                    data[cursor.y - 1].insertAfter(data[cursor.y - 1].size, it.copyOfRow(0))
                     println("${cursor.y} < ${data.size}$")
                     for (i in 1 until it.size - 1) {
                         data.insertAfter(cursor.y, DataArray(it.copyOfRow(i)))
                         cursor.y++
                     }
-                    data.get(cursor.y).insertAfter(cursor.x, it.copyOfRow(it.size - 1))
+                    data[cursor.y].insertAfter(cursor.x, it.copyOfRow(it.size - 1))
                 }
-                cursor.x += it.get(it.size - 1).size
+                cursor.x += it.last.size
             }
         }
         editUpdate()
@@ -265,7 +265,7 @@ class Editor {
         val multiRow = l.y < r.y
         var aliveFirstRow = false
         if (l.x > 0 && l.y < r.y) {
-            data.get(l.y).removeRange(l.x, data.get(l.y).size)
+            data[l.y].removeRange(l.x, data[l.y].size)
             l.y++
             l.x = 0
             aliveFirstRow = true
@@ -275,12 +275,12 @@ class Editor {
             r.y--
         }
         if (l.x < r.x)
-            data.get(l.y).removeRange(l.x, r.x)
+            data[l.y].removeRange(l.x, r.x)
         cursor.y = l.y
         cursor.x = l.x
         if (multiRow && aliveFirstRow) {
             cursor.y--
-            cursor.x = data.get(cursor.y).size
+            cursor.x = data[cursor.y].size
             mergeRows()
         }
         editUpdate()

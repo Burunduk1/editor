@@ -2,7 +2,7 @@ package model.ds
 
 class DataArray<T>() : Iterable<T> {
     private val data = ArrayList<T>()
-    fun get(i: Int) = data[i]
+    operator fun get(i: Int) = data[i]
     fun get(i: Int, default: T) = if (i < size) data[i] else default
     fun set(i: Int, x: T) {
         data[i] = x
@@ -27,6 +27,8 @@ class DataArray<T>() : Iterable<T> {
     val size: Int
         get() = data.size
     fun clear() = data.clear()
+    val last: T
+        get() = get(size - 1)
 
     fun insertAfter(i: Int, array: Iterable<T>) {
         var pos = i
@@ -40,7 +42,7 @@ class DataArray<T>() : Iterable<T> {
     class DataArrayIterator<T>(private val data: DataArray<T>, private var index: Int,
                                private val border: Int = data.size) : Iterator<T> {
         override fun next(): T {
-            return data.get(index++)
+            return data[index++]
         }
 
         override fun hasNext(): Boolean {
