@@ -1,6 +1,8 @@
 package tests
 
 import model.Editor
+import model.Selection
+import model.ds.CmpPair
 import model.ds.TextPosition
 import org.apache.commons.io.FileUtils
 import org.junit.jupiter.api.Assertions.*
@@ -35,13 +37,16 @@ internal class EditorTest {
         openFileForReading(tmp).use { e.load(it) }
         return e
     }
+
+    private val p: TextPosition
+        get() = e.cursor.pair
     private fun assertAction(f: KFunction<*>, y: Int, x: Int) {
         f.call(e)
-        assertEquals(e.cursor.pair, TextPosition(y, x))
+        assertEquals(p, TextPosition(y, x))
     }
     private fun<T1> assertAction1(f: KFunction<*>, arg1: T1, y: Int, x: Int) {
         f.call(e, arg1)
-        assertEquals(e.cursor.pair, TextPosition(y, x))
+        assertEquals(p, TextPosition(y, x))
     }
 
     @Test
@@ -111,5 +116,23 @@ internal class EditorTest {
         assertAction1(Editor::editTypeChar, '*', 4, 2)
         assertAction(Editor::editDeleteLine, 4, 2)
         assertEquals(e.text, "  word word, word)  Z\n\n\n*\n30 40")
+    }
+
+    @Test
+    fun clipboardTest1() {
+        e = editorWithText("word")
+        val s = Selection(e.cursor)
+        s.startSelection()
+        e.navigateTermRight()
+        s.areaHandle(e::copyToClipboard)
+        s.on = false
+        e.pasteFromClipboard()
+        e.pasteFromClipboard()
+        assertEquals(e.text, "wordwordword")
+        e.cursor.pair = CmpPair(0, 4)
+        assertEquals(s.selectStart, TextPosition(0, 0))
+        s.areaHandle(e::deleteBlock)
+        assertEquals(e.text, "wordword")
+        assertEquals(p, TextPosition(0, 0))
     }
 }
