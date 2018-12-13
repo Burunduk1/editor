@@ -4,20 +4,21 @@ import java.awt.Component
 import java.io.File
 import javax.swing.JFileChooser
 
-private fun checkFileCan(f: File?, action: () -> Unit): File? {
-    if (f?.exists() == false)
+fun checkFileForReading(f: File?): File? = if (f?.canRead() == false) null else f
+fun checkFileForWriting(f: File?): File? {
+    if (f == null)
         return null
+    if (f.exists())
+        return if (f.canWrite()) f else null
     try {
-        action()
-    } catch (e: Exception) {
+        f.printWriter().close()
+        f.delete()
+    } catch (_: Exception) {
         println("Exception!")
         return null
     }
     return f
 }
-
-fun checkFileForReading(f: File?): File? = checkFileCan(f) { f?.bufferedReader() }
-fun checkFileForWriting(f: File?): File? = checkFileCan(f) { f?.printWriter() }
 
 //fun getFile(s: String?) = s?.let { checkFileForReading(File(s)) }
 
